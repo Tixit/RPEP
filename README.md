@@ -374,7 +374,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### 12.  Acknowledgements
 
-   RPEP was developed partly in response to Web Application Messaging Protocol. Thanks to them for the
+RPEP was developed partly in response to Web Application Messaging Protocol. Thanks to them for the inspiration and motivation.
 
 ### 13.  References
 
