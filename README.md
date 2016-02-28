@@ -196,7 +196,7 @@ There are a couple reserved message sub-formats that have special meanings:
 * `["e", [errorMessage, errorData]` - This indicates that some error happened related to either a received Fire and Forget message or at a global level (*Request-Response errors and Event Stream errors should not use this form to report errors*).
 * `[id, "e", [errorMessage, errorData]]` - This indicates that some error happened related to a received Request or in an Event Stream (which one depends on what the `id` identifies).
 * `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
-* `["open", openData] - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
+* `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
 * `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
 
 In the above:
