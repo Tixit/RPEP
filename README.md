@@ -14,6 +14,50 @@ This document defines the Remote Procedure and Event Protocol (RPEP), which is a
 
 It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in "Serializations" section).
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update - *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents**
+
+ - [1.  Introduction](#1--introduction)
+     - [1.1.  Background](#11--background)
+     - [1.2. Protocol Overview](#12-protocol-overview)
+     - [1.3 Philosophy](#13-philosophy)
+ - [2.  Conformance Requirements](#2--conformance-requirements)
+     - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
+ - [3.  Peers and Roles](#3--peers-and-roles)
+ - [4. Building Blocks](#4-building-blocks)
+     - [4.1.  Serializations](#41--serializations)
+     - [4.2.  Transports](#42--transports)
+       - [4.2.1.  Transport and Session Lifetime](#421--transport-and-session-lifetime)
+ - [5.0.  Messages](#50--messages)
+     - [5.1.  Structure](#51--structure)
+       - [5.1.1  IDs](#511--ids)
+       - [5.1.2  Command Names](#512--command-names)
+     - [5.2. Special Messages](#52-special-messages)
+       - [5.2.1 Special Errors](#521-special-errors)
+     - [5.3 Messaging Modes](#53-messaging-modes)
+       - [5.3.1 Fire and Forget](#531-fire-and-forget)
+       - [5.3.2 Request and Response](#532-request-and-response)
+       - [5.3.3 Event Stream](#533-event-stream)
+     - [5.4 Identifying Messaging Mode](#54-identifying-messaging-mode)
+ - [6. Ordering Guarantees](#76ordering-guarantees)
+ - [7. Connection Closure](#7-connection-closure)
+ - [8.  Security Model](#8--security-model)
+ - [9. Examples](#9-examples)
+     - [9.1 Fire and Forget Examples](#91-fire-and-forget-examples)
+     - [9.2 Request and Response Examples](#92-request-and-response-examples)
+     - [9.3 Event Stream Examples](#93-event-stream-examples)
+ - [10. Copyright Notice - The MIT License (MIT)](#10-copyright-notice---the-mit-license-mit)
+ - [11.  Contributors](#11--contributors)
+ - [12.  Acknowledgements](#12--acknowledgements)
+ - [13.  References](#13--references)
+     - [13.1.  Normative References](#131--normative-references)
+     - [13.2.  Informative References](#132--informative-references)
+ - [14. Authors' Addresses](#14-authors-addresses)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ### 1.  Introduction
 
 ##### 1.1.  Background
@@ -152,7 +196,7 @@ There are a couple reserved message sub-formats that have special meanings:
 
 * `["e", [errorMessage, errorData]` - This indicates that some error happened related to either a received Fire and Forget message or at a global level (*Request-Response errors and Event Stream errors should not use this form to report errors*).
 * `[id, "e", [errorMessage, errorData]]` - This indicates that some error happened related to a received Request or in an Event Stream (which one depends on what the `id` identifies).
-* `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted.
+* `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
 * `["close", closeData]` - This indicates that the Sender is going to close the connection. This event is optional for certain transports (see the section "Connection Closure" for more details).
 
 In the above:
@@ -206,7 +250,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least two messages, but most likely more than two. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and either Peer may send the final "end" Emission message.
+An Event Stream requires at least two messages, but most likely involves more than two. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and either Peer may send the final "end" Emission message.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
@@ -241,20 +285,40 @@ While there is no explicit named mode in any given message, the type of mode can
 
 The following procedure can be used to identify what kind of message has been received:
 
-1. If the first value is a "string" type, the message is either a Fire and Forget, a Request, or an Event Stream Initiation.
- 1.1. Check the commandName for the mode it was registered as.
- 1.2. If no commandName is registered, send a Fire and Forget error with the error message "noSuchCommand"
-2. Otherwise, if the value is an "integer" type, the message is either a Response or an event Emission message.
- 2.1. Check the id for its mode and other information as to how to handle it.
- 2.2. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
-3. If the first value is neither a "string" type nor an "integer" type, send a Fire and Forget error with the error message "invalidMessage"
+- 1. If the first value is a "string" type, the message is either a Fire and Forget, a Request, or an Event Stream Initiation.
+  - 1.1. Check the commandName for the mode it was registered as.
+  - 1.2. If the commandName isn't registered, send a Fire and Forget error with the error message "noSuchCommand"
+- 2. Otherwise, if the value is an "integer" type, the message is either a Response or an event Emission message.
+  - 2.1. Check the id for its mode and other information as to how to handle it.
+  - 2.2. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
+- 3. If the first value is neither a "string" type nor an "integer" type, send a Fire and Forget error with the error message "invalidMessage"
 
+### 6. Ordering Guarantees
 
-### 6. Examples
+Message order must be guaranteed for a given pair of Peers. If *Peer A* sends *Message A* to *Peer B* before sending *Message B*, *Message A* must have its handling *initiated* before *Message B* can have its handling initiated.
+
+For example, If *Peer A* has an open Event Stream endpoint for *Command 1* and a Request-Response endpoint for *Command 2*, and *Peer B* first emits an *event message (1)* on the *Command 1* Event Stream and then sends *request message (2)* for *Command 2*, then Peer A will first receive and begin the handling of the *event message (1)* before begginning the handling of *request message (2)*. This also holds for any combination of messaging modes and when *Command 1* and *Command 2* are identical.
+
+There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
+
+### 7. Connection Closure
+
+Implementations must provide some way for a peer to indicate that the connection will be closed. One of two ways of doing this must be available:
+
+* Some transport-protocol-level message, or
+* An RPEP "close" Fire and Forget message of the form `["close", closeData]`
+
+Implementations are not required to use the implemented way to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, a method of closure that does involve informing the other Peer must be implemented.
+
+### 8.  Security Model
+
+RPEP deliberately does not require or specify any kind of encryption, integrity validation, or authentication. RPEP transports may optionally provide guarantees of these kinds.
+
+### 9. Examples
 
 The following examples use JSON as the serialization format.
 
-##### 6.1 Fire and Forget Examples
+##### 9.1 Fire and Forget Examples
 
 Normal Fire and Forget message:
 
@@ -264,7 +328,7 @@ Fire and Forget error:
 
 `["error", ["Browser Error: Cannot access property 'zalgo' of undefined", {location:"depths.js", stack: "at Error (native)\n    at handle (https://localho ..."}]]`
 
-##### 6.2 Request and Response Examples
+##### 9.2 Request and Response Examples
 
 Successful request:
 
@@ -276,7 +340,7 @@ Errored Request:
 1. Request: `["send", 2, {"type":"skype", "message":"OMG I'm on the skypz!"}]`
 2. Response: `[2, "e", ["unknownError", {"details": "No you're not"}]]`
 
-##### 6.3 Event Stream Examples
+##### 9.3 Event Stream Examples
 
 Search Example (mostly 1 way communication):
 
@@ -291,14 +355,17 @@ Search Example (mostly 1 way communication):
 9. Confirmer Emission: `[4, "end"]`
 10. Initiator Emission: `[4, "end"]`
 
-Canceled Search Example:
+Canceled Progressive Command Example:
 
-1. Initiation: `["search", 6, {"query": {"make":"Mazda"} }]`
-2. Confirmer Emission: `[6, "result", {"model":"Mazda3", "year": 2004}]`
-3. Confirmer Emission: `[6, "result", {"model":"Mazda3", "year": 2006}]`
-4. Confirmer Emission: `[6, "result", {"model":"Verisa", "year": 2004}]`
-5. Initiator Emission: `[6, "end"]`
+1. Initiation: `["initialize", 6, "spaceship"]`
+2. Confirmer Emission: `[6, "progress", {"percent":0.05, "message": "Checked out backup flight systems"}]`
+3. Confirmer Emission: `[6, "result", {"percent":0.07, "message": "Activated and tested navigational systems"}]`
+4. Confirmer Emission: `[6, "result", {"percent":0.12, "message": "Completed preparation to load power reactant storage and distribution system"}]`
+5. Confirmer Emission: `[6, "result", {"percent":0.15, "message": "Finished loading cryogenic propellants into orbiter's PRSD system"}]`
+6. Confirmer Emission: `[6, "result", {"percent":0.2, "message": "Purged external tank nose-cone"}]`
+5. Initiator Emission: `[6, "abort"]`
 6. Confirmer Emission: `[6, "end"]`
+7. Initiator Emission: `[6, "end"]`
 
 Distributed Computing Example (more bi-directionality):
 
@@ -325,27 +392,6 @@ Distributed Computing Example (more bi-directionality):
 21. Initiator Emission: `[8, "result", "fg99438hga7d"]`
 22. Initiator Emission: `[8, "end"]`
 23. Confirmer Emission: `[8, "end"]`
-
-### 7. Ordering Guarantees
-
-Message order must be guaranteed for a given pair of Peers. If *Peer A* sends *Message A* to *Peer B* before sending *Message B*, *Message A* must have its handling *initiated* before *Message B* can have its handling initiated.
-
-For example, If *Peer A* has an open Event Stream endpoint for *Command 1* and a Request-Response endpoint for *Command 2*, and *Peer B* first emits an *event message (1)* on the *Command 1* Event Stream and then sends *request message (2)* for *Command 2*, then Peer A will first receive and begin the handling of the *event message (1)* before begginning the handling of *request message (2)*. This also holds for any combination of messaging modes and when *Command 1* and *Command 2* are identical.
-
-There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
-
-### 8. Connection Closure
-
-Implementations must provide some way for a peer to indicate that the connection will be closed. One of two ways of doing this must be available:
-
-* Some transport-protocol-level message, or
-* An RPEP "close" Fire and Forget message of the form `["close", closeData]`
-
-Implementations are not required to use the implemented way to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, a method of closure that does involve informing the other Peer must be implemented.
-
-### 9.  Security Model
-
-RPEP deliberately does not require or specify any kind of encryption, integrity validation, or authentication. RPEP transports may optionally provide guarantees of these kinds.
 
 ### 10. Copyright Notice - The MIT License (MIT)
 
