@@ -12,7 +12,7 @@ This document defines the Remote Procedure and Event Protocol (RPEP), which is a
 * Request and Response
 * Duplex Event Stream
 
-It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in "Serializations" section).
+It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in the "Serializations" section).
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update - *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
