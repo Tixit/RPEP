@@ -1,6 +1,5 @@
-Author: **Billy Tetrud**
-Date:   **2016-02-26**
 Category: **Standards Track**
+Version: **1.0.1**
 
 # The Remote Procedure and Event Protocol
 
@@ -14,47 +13,47 @@ This document defines the Remote Procedure and Event Protocol (RPEP), which is a
 
 It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in the "Serializations" section).
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update - *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
 
-**Table of Contents**
-
- - [1.  Introduction](#1--introduction)
-     - [1.1.  Background](#11--background)
-     - [1.2. Protocol Overview](#12-protocol-overview)
-     - [1.3 Philosophy](#13-philosophy)
- - [2.  Conformance Requirements](#2--conformance-requirements)
-     - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
- - [3.  Peers and Roles](#3--peers-and-roles)
- - [4. Building Blocks](#4-building-blocks)
-     - [4.1.  Serializations](#41--serializations)
-     - [4.2.  Transports](#42--transports)
-       - [4.2.1.  Transport and Session Lifetime](#421--transport-and-session-lifetime)
- - [5.0.  Messages](#50--messages)
-     - [5.1.  Structure](#51--structure)
-       - [5.1.1  IDs](#511--ids)
-       - [5.1.2  Command Names](#512--command-names)
-     - [5.2. Special Messages](#52-special-messages)
-       - [5.2.1 Special Errors](#521-special-errors)
-     - [5.3 Messaging Modes](#53-messaging-modes)
-       - [5.3.1 Fire and Forget](#531-fire-and-forget)
-       - [5.3.2 Request and Response](#532-request-and-response)
-       - [5.3.3 Event Stream](#533-event-stream)
-     - [5.4 Identifying Messaging Mode](#54-identifying-messaging-mode)
- - [6. Ordering Guarantees](#76ordering-guarantees)
- - [7. Connection Establishment and Closure](#7-connection-establishment-and-closure)
- - [8.  Security Model](#8--security-model)
- - [9. Examples](#9-examples)
-     - [9.1 Fire and Forget Examples](#91-fire-and-forget-examples)
-     - [9.2 Request and Response Examples](#92-request-and-response-examples)
-     - [9.3 Event Stream Examples](#93-event-stream-examples)
- - [10. Copyright Notice - The MIT License (MIT)](#10-copyright-notice---the-mit-license-mit)
- - [11.  Contributors](#11--contributors)
- - [12.  Acknowledgements](#12--acknowledgements)
- - [13.  References](#13--references)
-     - [13.1.  Normative References](#131--normative-references)
-     - [13.2.  Informative References](#132--informative-references)
- - [14. Authors' Addresses](#14-authors-addresses)
+- [1.  Introduction](#1--introduction)
+    - [1.1.  Background](#11--background)
+    - [1.2. Protocol Overview](#12-protocol-overview)
+    - [1.3 Philosophy](#13-philosophy)
+- [2.  Conformance Requirements](#2--conformance-requirements)
+    - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
+- [3.  Peers and Roles](#3--peers-and-roles)
+- [4. Building Blocks](#4-building-blocks)
+    - [4.1.  Serializations](#41--serializations)
+    - [4.2.  Transports](#42--transports)
+      - [4.2.1.  Transport and Session Lifetime](#421--transport-and-session-lifetime)
+- [5.0.  Messages](#50--messages)
+    - [5.1.  Structure](#51--structure)
+      - [5.1.1  IDs](#511--ids)
+      - [5.1.2  Command Names](#512--command-names)
+    - [5.2. Special Messages](#52-special-messages)
+      - [5.2.1 Special Errors](#521-special-errors)
+    - [5.3 Messaging Modes](#53-messaging-modes)
+      - [5.3.1 Fire and Forget](#531-fire-and-forget)
+      - [5.3.2 Request and Response](#532-request-and-response)
+      - [5.3.3 Event Stream](#533-event-stream)
+    - [5.4 Identifying Messaging Mode](#54-identifying-messaging-mode)
+- [6. Ordering Guarantees](#6-ordering-guarantees)
+- [7. Connection Establishment and Closure](#7-connection-establishment-and-closure)
+- [8.  Security Model](#8--security-model)
+- [9. Examples](#9-examples)
+    - [9.1 Fire and Forget Examples](#91-fire-and-forget-examples)
+    - [9.2 Request and Response Examples](#92-request-and-response-examples)
+    - [9.3 Event Stream Examples](#93-event-stream-examples)
+- [10. Copyright Notice - The MIT License (MIT)](#10-copyright-notice---the-mit-license-mit)
+- [11. Change Log](#11-change-log)
+- [12.  References](#12--references)
+    - [12.1.  Normative References](#121--normative-references)
+    - [12.2.  Informative References](#122--informative-references)
+- [13.  Contributors](#13--contributors)
+- [14.  Acknowledgements](#14--acknowledgements)
+- [15. Authors' Addresses](#15-authors-addresses)
+- [16. How to Contribute!](#16-how-to-contribute)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -251,7 +250,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least two messages, but most likely involves more than two. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and either Peer may send the final "end" Emission message.
+An Event Stream requires at least two messages, but most likely involves more than two. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and either Peer may send the final "end" Emission message. After sending the "end" message, subsequent messages that come in on that event stream MUST be ignored. Conversely, after receiving an "end" message, that recipient Peer must NOT send any more messages on that event stream.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
@@ -267,18 +266,13 @@ An Event Stream requires at least two messages, but most likely involves more th
                   .                     .
                   |                     |
                   |   "end" Emission    |
-                  ?A--------------------?B
-                  |                     |
-                  | "end" Confirmation  |
-                  ?B--------------------?A
+                  ?---------------------?
 
          In the above diagram, the qusetion marks (?)
          indicate that the message may originate from
-         either end. The reversal of A and B indicate
-         that whoever receives an "end" message first
-         should then also send one.
+         either end.
 
-Note that the reason both sides must emit an "end" message is because valid Emission messages may be already in transit when one Peer sends the first "end" message.
+Note that because Emission messages may be already in transit when one Peer sends the an "end" message, it is often advisable for the end-application api to have some kind of end-request message that is confirmed by the other Peer sending the "end" message. Regardless, RPEP does not require any end-request message.
 
 ##### 5.4 Identifying Messaging Mode
 
@@ -354,7 +348,6 @@ Search Example (mostly 1 way communication):
 7. Confirmer Emission: `[4, "result", {"model":"Integra", "year": 1988}]`
 8. Confirmer Emission: `[4, "result", {"model":"NSX", "year": 1991}]`
 9. Confirmer Emission: `[4, "end"]`
-10. Initiator Emission: `[4, "end"]`
 
 Canceled Progressive Command Example:
 
@@ -364,9 +357,11 @@ Canceled Progressive Command Example:
 4. Confirmer Emission: `[6, "result", {"percent":0.12, "message": "Completed preparation to load power reactant storage and distribution system"}]`
 5. Confirmer Emission: `[6, "result", {"percent":0.15, "message": "Finished loading cryogenic propellants into orbiter's PRSD system"}]`
 6. Confirmer Emission: `[6, "result", {"percent":0.2, "message": "Purged external tank nose-cone"}]`
-5. Initiator Emission: `[6, "abort"]`
-6. Confirmer Emission: `[6, "end"]`
-7. Initiator Emission: `[6, "end"]`
+7. Initiator Emission: `[6, "abort"]`
+8. Confirmer Emission: `[6, "aborting", {"percent":30, "message": "Control alerted to abort"}]`
+9. Confirmer Emission: `[6, "aborting", {"percent":60, "message": "Unloaded propellants"}]`
+10. Confirmer Emission: `[6, "aborting", {"percent":100, "message": "Deactivated navigational systems"}]`
+12. Confirmer Emission: `[6, "end"]`
 
 Distributed Computing Example (more bi-directionality):
 
@@ -392,7 +387,6 @@ Distributed Computing Example (more bi-directionality):
 20. Confirmer Emission: `[8, "finish"]`
 21. Initiator Emission: `[8, "result", "fg99438hga7d"]`
 22. Initiator Emission: `[8, "end"]`
-23. Confirmer Emission: `[8, "end"]`
 
 ### 10. Copyright Notice - The MIT License (MIT)
 
@@ -415,27 +409,35 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-### 11.  Contributors
+### 11. Change Log
 
-* Billy Tetrud
+* 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
+* 1.0.0 - 2016-02-26 - Created
 
-### 12.  Acknowledgements
+### 12.  References
 
-RPEP was developed partly in response to Web Application Messaging Protocol. Thanks to them for the inspiration and motivation.
+##### 12.1.  Normative References
 
-### 13.  References
-
-##### 13.1.  Normative References
-
-##### 13.2.  Informative References
+##### 12.2.  Informative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
               RFC2119, March 1997,
               <http://www.rfc-editor.org/info/rfc2119>.
 
+### 13.  Contributors
 
-### 14. Authors' Addresses
+* Billy Tetrud
+
+### 14.  Acknowledgements
+
+RPEP was developed partly in response to Web Application Messaging Protocol. Thanks to them for the inspiration and motivation.
+
+### 15. Authors' Addresses
 
    Billy Tetrud
    Email: billy.tetrud at gmail.com
+
+### 16. How to Contribute!
+
+Feel free to ask questions or discuss protocol changes in github issues, or at https://gitter.im/Tixit/RPEP-Discussion . If you want to write an implementation, please let us know so we can add your implmentation here.
