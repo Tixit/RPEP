@@ -42,7 +42,7 @@ It is intended to connect application components in distributed applications. RP
        - [5.3.3 Event Stream](#533-event-stream)
      - [5.4 Identifying Messaging Mode](#54-identifying-messaging-mode)
  - [6. Ordering Guarantees](#76ordering-guarantees)
- - [7. Connection Closure](#7-connection-closure)
+ - [7. Connection Establishment and Closure](#7-connection-establishment-and-closure)
  - [8.  Security Model](#8--security-model)
  - [9. Examples](#9-examples)
      - [9.1 Fire and Forget Examples](#91-fire-and-forget-examples)
@@ -197,7 +197,8 @@ There are a couple reserved message sub-formats that have special meanings:
 * `["e", [errorMessage, errorData]` - This indicates that some error happened related to either a received Fire and Forget message or at a global level (*Request-Response errors and Event Stream errors should not use this form to report errors*).
 * `[id, "e", [errorMessage, errorData]]` - This indicates that some error happened related to a received Request or in an Event Stream (which one depends on what the `id` identifies).
 * `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
-* `["close", closeData]` - This indicates that the Sender is going to close the connection. This event is optional for certain transports (see the section "Connection Closure" for more details).
+* `["open", openData] - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
+* `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
 
 In the above:
 
@@ -301,14 +302,14 @@ For example, If *Peer A* has an open Event Stream endpoint for *Command 1* and a
 
 There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
 
-### 7. Connection Closure
+### 7. Connection Establishment and Closure
 
-Implementations must provide some way for a peer to indicate that the connection will be closed. One of two ways of doing this must be available:
+Implementations must provide some way for a peer to indicate that a connection has been established and that the connection will be closed. One of two ways of doing this must be available:
 
 * Some transport-protocol-level message, or
 * An RPEP "close" Fire and Forget message of the form `["close", closeData]`
 
-Implementations are not required to use the implemented way to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, a method of closure that does involve informing the other Peer must be implemented.
+Implementations are required to use the implemented way of information the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use the implemented way to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, a method of closure that does involve informing the other Peer must be implemented.
 
 ### 8.  Security Model
 
