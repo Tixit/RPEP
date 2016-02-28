@@ -100,7 +100,9 @@ RPEP requires a transport with the following characteristics:
 * ordered
 * bi-directional (full-duplex)
 
-Note: TCP and WebSockets both fit these criteria.
+Note: WebSockets fit these criteria.
+
+Protocols that don't fit all these criteria must be augmented to fulfill the missing pieces if they are to be used as an RPEP transport. For example, since TCP operates on string streams rather than being message-oriented, it would be necessary to implement some way of chunking the stream into distinct messages at a lower level than RPEP if TCP were to be used for RPEP. Similarly, while UDP is message-oriented and bi-directional, it isn't reliable or ordered, and so those facilities would need to be added on top of it before the resulting protocol could be used as an RPEP transport.
 
 ###### 4.2.1.  Transport and Session Lifetime
 
@@ -165,8 +167,7 @@ There are a couple standard errors an implementation must send (the `errorMessag
 * "idNotFound" - This indicates that the `id` in a sent Response message or Event Stream Emission doesn't exist.
 * "invalidId" - This indicates that the `id` sent is not valid in some way. The errorData should indicate further what was wrong with the Id (whether it was odd when it should be even, or if it was out of bounds, etc).
 * "invalidMessage" - This indicates that the message could not be parsed as one of the five valid types of messages defined in section 5.
-* "noSuchFireAndForgetEndpoint" - This indicates that the `commandName` is not available to receive a Fire and Forget message. *This error must still be sent if the `commandName` is available for a different messaging mode*.
-* "noSuchRequestOrEventEndpoint" - This indicates that the `commandName` is not available to respond to a Request message nor as an Event Stream. *This error must still be sent if the `commandName` is available for the Fire and Forget mode*.
+* "noSuchCommand" - This indicates that the `commandName` is not available in any mode.
 
 ##### 5.3 Messaging Modes
 
@@ -238,6 +239,17 @@ Note that the reason both sides must emit an "end" message is because valid Emis
 
 While there is no explicit named mode in any given message, the type of mode can always be determined either by the `commandName` or by the `id`. For messages with a `commandName`, the registered endpoints to handle that command must keep track of what mode the command was registered as. For messages using an `id` from a previous message that had a `commandName`, the impelmentor must somehow keep track of the mode the original message was using.
 
+The following procedure can be used to identify what kind of message has been received:
+
+1. If the first value is a "string" type, the message is either a Fire and Forget, a Request, or an Event Stream Initiation.
+ 1.1. Check the commandName for the mode it was registered as.
+ 1.2. If no commandName is registered, send a Fire and Forget error with the error message "noSuchCommand"
+2. Otherwise, if the value is an "integer" type, the message is either a Response or an event Emission message.
+ 2.1. Check the id for its mode and other information as to how to handle it.
+ 2.2. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
+3. If the first value is neither a "string" type nor an "integer" type, send a Fire and Forget error with the error message "invalidMessage"
+
+
 ### 6. Examples
 
 The following examples use JSON as the serialization format.
@@ -296,21 +308,23 @@ Distributed Computing Example (more bi-directionality):
 4. Confirmer Emission: `[8, "fragment", "vent Protocol (RPEP), which is a protocol that p"]`
 5. Confirmer Emission: `[8, "fragment", "rotocol that provides three messaging modes:\n\n* "]`
 6. Confirmer Emission: `[8, "fragment", "Fire and Forget\n\n* Request and Response\n\n* Duple"]`
-7. Confirmer Emission: `[8, "fragment", "x Event Stream"]`
-8. Confirmer Emission: `[8, "finish"]`
-9. Initiator Emission: `[8, "result", "32rf2893f7hf"]`
-10. Confirmer Emission: `[8, "hash", {"algorithm":"v5"}]
-11. Confirmer Emission: `[8, "fragment", "It is intended to connect application component"]`
-12. Confirmer Emission: `[8, "fragment", "s in distributed applications. RPEP is both tra"]`
-13. Confirmer Emission: `[8, "fragment", "nsport-agnostic and serialization-agnostic, whe"]`
-9. Initiator Emission: `[8, "unavailable", {"completionOK":true}]`
-14. Confirmer Emission: `[8, "fragment", "re the transport protocol and serialization form"]`
-15. Confirmer Emission: `[8, "fragment", "at only have to meet some minimum requirements ("]`
-16. Confirmer Emission: `[8, "fragment", "defined in "Serializations" section)."]`
-17. Confirmer Emission: `[8, "finish"]`
-18. Initiator Emission: `[8, "result", "fg99438hga7d"]`
-19. Initiator Emission: `[8, "end"]`
-20. Confirmer Emission: `[8, "end"]`
+7. Initiator Emission: `[8, "backPressure"]`
+8. Initiator Emission: `[8, "pressureRelieved"]`
+9. Confirmer Emission: `[8, "fragment", "x Event Stream\n\nIt is intended to connect applicatio"]`
+10. Confirmer Emission: `[8, "fragment", "n components in distributed applications. "]`
+11. Confirmer Emission: `[8, "finish"]`
+12. Initiator Emission: `[8, "result", "32rf2893f7hf"]`
+13. Confirmer Emission: `[8, "hash", {"algorithm":"v5"}]`
+14. Confirmer Emission: `[8, "fragment", "RPEP is both transport-agnostic and serializatio"]`
+15. Confirmer Emission: `[8, "fragment", "n-agnostic, where the transport protocol and ser"]`
+16. Initiator Emission: `[8, "unavailable", {"completionOK":true}]`
+17. Confirmer Emission: `[8, "fragment", "ialization format only have to meet some minimum"]`
+18. Confirmer Emission: `[8, "fragment", " requirements (defined in "Serializations" secti"]`
+19. Confirmer Emission: `[8, "fragment", "on)."]`
+20. Confirmer Emission: `[8, "finish"]`
+21. Initiator Emission: `[8, "result", "fg99438hga7d"]`
+22. Initiator Emission: `[8, "end"]`
+23. Confirmer Emission: `[8, "end"]`
 
 ### 7. Ordering Guarantees
 
