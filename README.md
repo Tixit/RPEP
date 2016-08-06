@@ -156,11 +156,9 @@ RPEP implementations are NOT required to tie the lifetime of the underlying tran
 Each RPEP message is a "list" with either an id, a commandName, or both, and then some payload data. The types of messages are:
 
 * Fire and Forget: `[commandName, data]`
-* Request: `[commandName, id, data]`
+* Request or Event Stream Initiation: `[commandName, id, data]`
 * Success Response: `[id, data]`
-* Error Response: `[id, "e", data]`
-* Initiation: `[commandName, id, data]`
-* Emission: `[id, eventName, data]`
+* Event Stream Emission: `[id, eventName, data]`
 
 where
 
@@ -193,11 +191,11 @@ Like IDs, the namespace of command names (the `commandName` argument) is shared 
 
 There are a couple reserved message sub-formats that have special meanings:
 
-* `["e", [errorMessage, errorData]` - This indicates that some error happened related to either a received Fire and Forget message or at a global level (*Request-Response errors and Event Stream errors should not use this form to report errors*).
-* `[id, "e", [errorMessage, errorData]]` - This indicates that some error happened related to a received Request or in an Event Stream (which one depends on what the `id` identifies).
-* `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
-* `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
-* `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
+* Error Response/Event: `[id, "e", [errorMessage, errorData]]`
+* Global Error: `["e", [errorMessage, errorData]]`
+* Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
+* Connection Established: `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
+* Impending Connection Closure: `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
 
 In the above:
 
@@ -250,7 +248,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent messages that come in on that event stream MUST be ignored.
+An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "idNotFound" error.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
