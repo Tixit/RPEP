@@ -238,7 +238,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "idNotFound" error.
+An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "rpepIdNotFound" error.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
