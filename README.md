@@ -22,8 +22,6 @@ It is intended to connect application components in distributed applications. RP
 - [2.  Conformance Requirements](#2--conformance-requirements)
     - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
 - [3.  Peers and Roles](#3--peers-and-roles)
-    - [3.1. Peers](#31-peers)
-    - [3.2. Roles](#32-roles)
 - [4. Building Blocks](#4-building-blocks)
     - [4.1.  Serializations](#41--serializations)
     - [4.2.  Transports](#42--transports)
@@ -94,7 +92,7 @@ Key terms such as named algorithms or definitions are indicated like `This` when
 
 ##### 3.1. Peers
 
-There is always two parties involved in a connection. We will call these parties `Peers`.
+There is always two parties involved in a connection. We will call these parties `Peers`. An RPEP connection connects two Peers, a `Client` and `Service`. A Service is the Peer that listens for a connection, and the Client is the Peer that connects to the service. Each RPEP Peer MUST implement one role, and MAY implement any role.
 
 For `Fire and Forget`, there are two roles:
 
@@ -111,17 +109,6 @@ For the `Duplex Event Stream` mode, there are three roles:
 * `Initiator` - The Peer is that requests the establishment of the event stream.
 * `Confirmer` - The Peer that confirms the establishment of the event stream.
 * `Emitter` - The Peer emitting an event to the other Peer over that stream. The Initiator and Confirmer can both act as Emitters once the event stream is established.
-
-##### 3.2. Roles
-
-An RPEP connection connects two Peers, a `Client` and `Service`. A Service is the Peer that listens for a connection, and the Client is the Peer that connects to the service. Each RPEP Peer MUST implement one role, and MAY implement more roles. A Peer may implement any combination of the Roles:
-
-* Sender
-* Receiver
-* Requester
-* Responder
-* Initiator
-* Emitter
 
 ### 4. Building Blocks
 
