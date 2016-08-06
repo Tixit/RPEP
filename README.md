@@ -250,7 +250,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least two messages, but most likely involves more than two. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and either Peer may send the final "end" Emission message. After sending the "end" message, subsequent messages that come in on that event stream MUST be ignored. Conversely, after receiving an "end" message, that recipient Peer must NOT send any more messages on that event stream.
+An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent messages that come in on that event stream MUST be ignored.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
@@ -267,12 +267,12 @@ An Event Stream requires at least two messages, but most likely involves more th
                   |                     |
                   |   "end" Emission    |
                   ?---------------------?
+                  | "end" Confirmation  |
+                  ?---------------------?
 
          In the above diagram, the qusetion marks (?)
          indicate that the message may originate from
          either end.
-
-Note that because Emission messages may be already in transit when one Peer sends the an "end" message, it is often advisable for the end-application api to have some kind of end-request message that is confirmed by the other Peer sending the "end" message. Regardless, RPEP does not require any end-request message.
 
 ##### 5.4 Identifying Messaging Mode
 
