@@ -271,8 +271,8 @@ The following procedure can be used to identify what kind of message has been re
 - 1. If the first value is a "string" type, the message is either a Fire and Forget, a Request, or an Event Stream Initiation.
   - 1.1. Check the commandName for the mode it was registered as.
   - 1.2. If the commandName isn't registered, send a Fire and Forget error with the error message "noSuchCommand"
-- 2. Otherwise, if the value is an "integer" type, the message is either a Response or an event Emission message.
-  - 2.1. Check the id for its mode and other information as to how to handle it.
+- 2. Otherwise, if the first value is an "integer" type, the message is either a Response or an event Emission message.
+  - 2.1. Check the id for its mode and other information as to how to handle it. If the id can't be found, send an "rpepIdNotFound" error response.
   - 2.2. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
 - 3. If the first value is neither a "string" type nor an "integer" type, send a Fire and Forget error with the error message "invalidMessage"
 
