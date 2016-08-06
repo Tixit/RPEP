@@ -23,7 +23,7 @@ It is intended to connect application components in distributed applications. RP
     - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
 - [3.  Peers and Roles](#3--peers-and-roles)
     - [3.1. Peers](#31-peers)
-    - [3.2. Roles](#31-roles)
+    - [3.2. Roles](#32-roles)
 - [4. Building Blocks](#4-building-blocks)
     - [4.1.  Serializations](#41--serializations)
     - [4.2.  Transports](#42--transports)
