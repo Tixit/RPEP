@@ -194,10 +194,10 @@ In the above:
 
 ###### 5.2.1 Special Errors
 
-There are a couple standard errors an implementation must send (the `errorMessage` argument):
+There are a couple standard errors an implementation must send (the `errorMessage` argument). Errors that indicate a failure of the RPEP implementation of the other Peer are prefixed with 'rpep' to distinguish them from application errors.
 
-* "idNotFound" - This indicates that the `id` in a sent Response message or Event Stream Emission doesn't exist.
-* "invalidId" - This indicates that the `id` sent is not valid in some way. The errorData should indicate further what was wrong with the Id (whether it was odd when it should be even, or if it was out of bounds, etc).
+* "rpepIdNotFound" - This indicates that the `id` in a sent Response message or Event Stream Emission doesn't exist.
+* "rpepInvalidId" - This indicates that the `id` sent is not valid in some way. The errorData should indicate further what was wrong with the Id (whether it was odd when it should be even, or if it was out of bounds, etc).
 * "invalidMessage" - This indicates that the message could not be parsed as one of the five valid types of messages defined in section 5.
 * "noSuchCommand" - This indicates that the `commandName` is not available in any mode.
 
