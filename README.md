@@ -18,11 +18,12 @@ It is intended to connect application components in distributed applications. RP
 
 - [1.  Introduction](#1--introduction)
     - [1.1.  Background](#11--background)
-    - [1.2. Protocol Overview](#12-protocol-overview)
-    - [1.3 Philosophy](#13-philosophy)
+    - [1.2 Philosophy](#12-philosophy)
 - [2.  Conformance Requirements](#2--conformance-requirements)
     - [2.1.  Terminology and Other Conventions](#21--terminology-and-other-conventions)
 - [3.  Peers and Roles](#3--peers-and-roles)
+    - [3.1. Peers](#31-peers)
+    - [3.2. Roles](#31-roles)
 - [4. Building Blocks](#4-building-blocks)
     - [4.1.  Serializations](#41--serializations)
     - [4.2.  Transports](#42--transports)
@@ -65,27 +66,7 @@ It is intended to connect application components in distributed applications. RP
 
 While the WebSocket protocol brings bi-directional real-time connections to the browser, it requires users who want to use WebSocket connections in their applications to define their own semantics on top of it. RPEP provides three of the most common semantics needed in application development so not only can browsers talk to servers, but servers can talk to other servers, devices can communicate with other devices, and (with WebRTC) browsers can talk directly to other browsers, using familiar RPC or event semantics. The WAMP protocol, by comparison, does not support peer to peer communication.
 
-##### 1.2. Protocol Overview
-
-There is always two parties involved in a connection. We will call these parties `Peers`.
-
-For `Fire and Forget`, there are two roles:
-
-* `Sender` - The Peer that fires the message.
-* `Receiver` - The Peer that receives the message.
-
-For `Request and Response`, there are two roles:
-
-* `Requester` - The Peer that makes the request.
-* `Responder` - The Peer who responds to the Requester's request.
-
-For the `Duplex Event Stream` mode, there are three roles:
-
-* `Initiator` - The Peer is that requests the establishment of the event stream.
-* `Confirmer` - The Peer that confirms the establishment of the event stream.
-* `Emitter` - The Peer emitting an event to the other Peer over that stream. The Initiator and Confirmer can both act as Emitters once the event stream is established.
-
-##### 1.3 Philosophy
+##### 1.2 Philosophy
 
 *This section is non-normative.*
 
@@ -110,6 +91,28 @@ Conformance requirements phrased as algorithms or specific steps MAY be implemen
 Key terms such as named algorithms or definitions are indicated like `This` when they first occur, and are capitalized throughout the text.
 
 ### 3.  Peers and Roles
+
+##### 3.1. Peers
+
+There is always two parties involved in a connection. We will call these parties `Peers`.
+
+For `Fire and Forget`, there are two roles:
+
+* `Sender` - The Peer that fires the message.
+* `Receiver` - The Peer that receives the message.
+
+For `Request and Response`, there are two roles:
+
+* `Requester` - The Peer that makes the request.
+* `Responder` - The Peer who responds to the Requester's request.
+
+For the `Duplex Event Stream` mode, there are three roles:
+
+* `Initiator` - The Peer is that requests the establishment of the event stream.
+* `Confirmer` - The Peer that confirms the establishment of the event stream.
+* `Emitter` - The Peer emitting an event to the other Peer over that stream. The Initiator and Confirmer can both act as Emitters once the event stream is established.
+
+##### 3.2. Roles
 
 An RPEP connection connects two Peers, a `Client` and `Service`. A Service is the Peer that listens for a connection, and the Client is the Peer that connects to the service. Each RPEP Peer MUST implement one role, and MAY implement more roles. A Peer may implement any combination of the Roles:
 
