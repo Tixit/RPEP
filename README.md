@@ -336,6 +336,7 @@ Search Example (mostly 1 way communication):
 7. Confirmer Emission: `[4, "result", {"model":"Integra", "year": 1988}]`
 8. Confirmer Emission: `[4, "result", {"model":"NSX", "year": 1991}]`
 9. Confirmer Emission: `[4, "end"]`
+10. Initiator Emission: `[4, "end"]`
 
 Canceled Progressive Command Example:
 
@@ -350,6 +351,7 @@ Canceled Progressive Command Example:
 9. Confirmer Emission: `[6, "aborting", {"percent":60, "message": "Unloaded propellants"}]`
 10. Confirmer Emission: `[6, "aborting", {"percent":100, "message": "Deactivated navigational systems"}]`
 12. Confirmer Emission: `[6, "end"]`
+13. Initiator Emission: `[4, "end"]`
 
 Distributed Computing Example (more bi-directionality):
 
@@ -375,6 +377,7 @@ Distributed Computing Example (more bi-directionality):
 20. Confirmer Emission: `[8, "finish"]`
 21. Initiator Emission: `[8, "result", "fg99438hga7d"]`
 22. Initiator Emission: `[8, "end"]`
+23. Confirmer Emission: `[8, "end"]`
 
 ### 10. Copyright Notice - The MIT License (MIT)
 
