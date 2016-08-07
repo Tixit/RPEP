@@ -1,5 +1,5 @@
 Category: **Standards Track**
-Version: **1.0.1**
+Version: **1.2.0**
 
 # The Remote Procedure and Event Protocol
 
