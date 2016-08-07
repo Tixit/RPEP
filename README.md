@@ -289,9 +289,9 @@ There are no guarantees on the order of Responses or Events in relation to when 
 Implementations must provide some way for a peer to indicate that a connection has been established and that the connection will be closed. One of two ways of doing this must be available:
 
 * Some transport-protocol-level message, or
-* An RPEP "close" Fire and Forget message of the form `["close", closeData]`
+* An RPEP "open" or "close" Fire and Forget message as described above.
 
-Implementations are required to use the implemented way of information the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use the implemented way to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, a method of closure that does involve informing the other Peer must be implemented.
+Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
 
 ### 8.  Security Model
 
