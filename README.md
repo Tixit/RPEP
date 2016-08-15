@@ -183,7 +183,7 @@ There are a couple reserved message sub-formats that have special meanings:
 
 * Error Response/Event: `[id, "e", [errorMessage, errorData]]`
 * Global Error: `["e", [errorMessage, errorData]]`
-* Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that received that event Emission must not emit any message other than a single "end" event to confirm the end of the stream.
+* Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that sent that event Emission must not emit any more messages on that stream.
 * Connection Established: `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
 * Impending Connection Closure: `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
 
@@ -238,7 +238,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least three messages, but most likely involves more than three. It begins with a single Initiation message, may have any number of Emission messages, and must end with two "end" Emission messages (one from each Peer). The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "rpepIdNotFound" error.
+An Event Stream requires at least two messages, but most likely involves more than that. It begins with a single Initiation message, may have any number of Emission messages, and must end with at least one "end" Emission message. The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "rpepIdNotFound" error. If the sender of an "end" event might receive valid events after sending that "end" event, the user of the implementation is strongly advised to require both ends to send "end" events. 
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
