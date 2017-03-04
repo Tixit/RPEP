@@ -11,7 +11,7 @@ This document defines the Remote Procedure and Event Protocol (RPEP), which is a
 * Request and Response
 * Duplex Event Stream
 
-It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in the "Serializations" section).
+It is intended to connect application components in distributed applications. RPEP is both transport-agnostic and serialization-agnostic, where the transport protocol and serialization format only have to meet some minimum requirements (defined in the "Serializations" and "Transports" sections).
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
@@ -62,7 +62,7 @@ It is intended to connect application components in distributed applications. RP
 
 *This section is non-normative.*
 
-While the WebSocket protocol brings bi-directional real-time connections to the browser, it requires users who want to use WebSocket connections in their applications to define their own semantics on top of it. RPEP provides three of the most common semantics needed in application development so not only can browsers talk to servers, but servers can talk to other servers, devices can communicate with other devices, and (with WebRTC) browsers can talk directly to other browsers, using familiar RPC or event semantics. The WAMP protocol, by comparison, does not support peer to peer communication.
+While the WebSocket protocol brings bi-directional real-time connections to the browser, it requires users who want to use WebSocket connections in their applications to define their own semantics on top of it. RPEP provides three of the most common semantics needed in application development so not only can browsers talk to servers, but servers can talk to other servers, devices can communicate with other devices, and (with WebRTC) browsers can talk directly to other browsers, using familiar RPC or event semantics. RPEP can also handle unordered messages in UDP-style. The WAMP protocol, by comparison, does not support peer to peer communication or unordered messages.
 
 ##### 1.2 Philosophy
 
@@ -130,12 +130,11 @@ RPEP requires a transport with the following characteristics:
 
 * message-oriented
 * reliable
-* ordered
 * bi-directional (full-duplex)
 
 Note: WebSockets fit these criteria.
 
-Protocols that don't fit all these criteria must be augmented to fulfill the missing pieces if they are to be used as an RPEP transport. For example, since TCP operates on string streams rather than being message-oriented, it would be necessary to implement some way of chunking the stream into distinct messages at a lower level than RPEP if TCP were to be used for RPEP. Similarly, while UDP is message-oriented and bi-directional, it isn't reliable or ordered, and so those facilities would need to be added on top of it before the resulting protocol could be used as an RPEP transport.
+Protocols that don't fit all these criteria must be augmented to fulfill the missing pieces if they are to be used as an RPEP transport. For example, since TCP operates on string streams rather than being message-oriented, it would be necessary to implement some way of chunking the stream into distinct messages at a lower level than RPEP if TCP were to be used for RPEP. Similarly, while UDP is message-oriented and bi-directional, it isn't reliable, and so those facilities would need to be added on top of it before the resulting protocol could be used as an RPEP transport.
 
 ###### 4.2.1.  Transport and Session Lifetime
 
@@ -167,11 +166,11 @@ RPEP Peers need to identify the following ephemeral entities:
 * Requests
 * Event Streams
 
-These are identified in RPEP using IDs that are integers between (inclusive) *0* and *2^53* (9007199254740992). Services must only create even number IDs when sending Requests and Event Stream Initiation messages, and Clients must only use odd number IDs (so that the namespaces don't collide). IDs SHOULD be incremented by 2 beginning with 0 (for a Service) or 1 (for a Client). Requests and Event streams use the same ID space, and so a unique ID should be used across requests and event streams.
+These are identified in RPEP using IDs that are integers between (inclusive) *0* and *2^53* (9007199254740992). Services must only create even number IDs when sending Requests and Event Stream Initiation messages, and Clients must only use odd number IDs (so that the namespaces don't collide). IDs MUST be incremented by 2 beginning with 0 (for a Service) or 1 (for a Client). Requests and Event streams use the same ID space, and so a unique ID should be used across requests and event streams.
 
 The reason to choose the specific upper bound is that 2^53 is the largest integer such that this integer and _all_ (positive) smaller integers can be represented exactly in IEEE-754 doubles. Some languages (e.g.  JavaScript) use doubles as their sole number type.  Most languages do have signed and unsigned 64-bit integer types that both can hold any value from the specified range.
 
-If incrimenting IDs by 2 is the method used, some handling of the case where the ID reaches 2^53 should be done. For example, the ID could wrap back around to 0 (or 1) but skip over IDs that are still currently in use by some open request or event stream.
+Some handling of the case where the ID reaches 2^53 should be done. For example, the ID could wrap back around to 0 (or 1) but skip over IDs that are still currently in use by some open request or event stream. When this happens, an ID discontinuity message must be sent. 
 
 ###### 5.1.2  Command Names
 
@@ -184,13 +183,17 @@ There are a couple reserved message sub-formats that have special meanings:
 * Error Response/Event: `[id, "e", [errorMessage, errorData]]`
 * Global Error: `["e", [errorMessage, errorData]]`
 * Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that sent that event Emission must not emit any more messages on that stream.
+* Event Stream - Enable order data: `[id, "order", yesNo]`
 * Connection Established: `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
 * Impending Connection Closure: `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
+* ID discontinuity message: ["idDiscontinuity", prevId, nextId] - This indicates that some IDs can't be used, and describes which IDs those are and where the IDs will continue from. `prevId` is the last usable ID, and `nextId` is the next usable ID. One use-case for this is if the maximum ID value is reached. The primary purpose of this is to ensure the ability to order request-response messages if desired. 
 
 In the above:
 
-* `errorMessage` should be a "string" type.
+* `errorMessage` must be a "string" type.
 * `errorData`, `endData`, and `closeData` may be any valid value that the serialization format can represent or may be omitted.
+* `yesNo` should either be 1 or 0 (for on or off respectively)
+* `prevId` and `nextId` must be an integer type. 
 
 ###### 5.2.1 Special Errors
 
@@ -242,7 +245,7 @@ An Event Stream requires at least two messages, but most likely involves more th
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
-             `----+----'         `---+-----'
+             `----+----'         `------+--'
                   |      Initiation     |
                   | -------------------->
                   |                     |
@@ -273,14 +276,13 @@ The following procedure can be used to identify what kind of message has been re
   - 1.2. If the commandName isn't registered, send a Fire and Forget error with the error message "noSuchCommand"
 - 2. Otherwise, if the first value is an "integer" type, the message is either a Response or an event Emission message.
   - 2.1. Check the id for its mode and other information as to how to handle it. If the id can't be found, send an "rpepIdNotFound" error response.
-  - 2.2. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
+  - 2.2.1. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
+  - 2.3.2. Or, if it is an Event, if ordering data is turned on, an extra ordering ID should be expected after the message ID.
 - 3. If the first value is neither a "string" type nor an "integer" type, send a Fire and Forget error with the error message "invalidMessage"
 
 ### 6. Ordering Guarantees
 
-Message order must be guaranteed for a given pair of Peers. If *Peer A* sends *Message A* to *Peer B* before sending *Message B*, *Message A* must have its handling *initiated* before *Message B* can have its handling initiated.
-
-For example, If *Peer A* has an open Event Stream endpoint for *Command 1* and a Request-Response endpoint for *Command 2*, and *Peer B* first emits an *event message (1)* on the *Command 1* Event Stream and then sends *request message (2)* for *Command 2*, then Peer A will first receive and begin the handling of the *event message (1)* before begginning the handling of *request message (2)*. This also holds for any combination of messaging modes and when *Command 1* and *Command 2* are identical.
+Message is not guaranteed by RPEP for a given pair of Peers. Implementations may provide a way for users to order Request-Response messages and Event messages, but not Fire-Forget messages or even to selectively ensure order based on the content of a message.  
 
 There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
 
@@ -291,7 +293,7 @@ Implementations must provide some way for a peer to indicate that a connection h
 * Some transport-protocol-level message, or
 * An RPEP "open" or "close" Fire and Forget message as described above.
 
-Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reitterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
+Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reiterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
 
 ### 8.  Security Model
 
@@ -379,6 +381,33 @@ Distributed Computing Example (more bi-directionality):
 22. Initiator Emission: `[8, "end"]`
 23. Confirmer Emission: `[8, "end"]`
 
+A similar example to the previous Distributed Computing Example except with ordering-data enabled:
+
+1. Initiation: `["workerAvailable", 8]`          
+2. Initiator Enable ordering: `[8, "order", 1]`
+2. Confirmer Emission: `[8, 0, "hash", {"algorithm":"v5"}]`
+3. Confirmer Emission: `[8, 1, "fragment", "This document defines the Remote Procedure and E"]`
+4. Confirmer Emission: `[8, 2, "fragment", "vent Protocol (RPEP), which is a protocol that p"]`
+5. Confirmer Emission: `[8, 3, "fragment", "rotocol that provides three messaging modes:\n\n* "]`
+6. Confirmer Emission: `[8, 4, "fragment", "Fire and Forget\n\n* Request and Response\n\n* Duple"]`
+7. Initiator Emission: `[8, "backPressure"]`
+8. Initiator Emission: `[8, "pressureRelieved"]`
+9. Confirmer Emission: `[8, 5, "fragment", "x Event Stream\n\nIt is intended to connect applicatio"]`
+10. Confirmer Emission: `[8, 6, "fragment", "n components in distributed applications. "]`
+11. Confirmer Emission: `[8, 7, "finish"]`
+12. Initiator Emission: `[8, "result", "32rf2893f7hf"]`
+13. Confirmer Emission: `[8, 8, "hash", {"algorithm":"v5"}]`
+14. Confirmer Emission: `[8, 9, "fragment", "RPEP is both transport-agnostic and serializatio"]`
+15. Confirmer Emission: `[8, 10, "fragment", "n-agnostic, where the transport protocol and ser"]`
+16. Initiator Emission: `[8, "unavailable", {"completionOK":true}]`
+17. Confirmer Emission: `[8, 11, "fragment", "ialization format only have to meet some minimum"]`
+18. Confirmer Emission: `[8, 12, "fragment", " requirements (defined in "Serializations" secti"]`
+19. Confirmer Emission: `[8, 13, "fragment", "on)."]`
+20. Confirmer Emission: `[8, 14, "finish"]`
+21. Initiator Emission: `[8, "result", "fg99438hga7d"]`
+22. Initiator Emission: `[8, "end"]`
+23. Confirmer Emission: `[8, 15, "end"]`
+
 ### 10. Copyright Notice - The MIT License (MIT)
 
 Copyright (c) 2016 Billy Tetrud
@@ -402,6 +431,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### 11. Change Log
 
+* 1.0.2 - 2017-03-04 - Removed ordering requirement, and adding optional order number for event messages. 
 * 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
 * 1.0.0 - 2016-02-26 - Created
 
