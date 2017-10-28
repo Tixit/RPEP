@@ -184,8 +184,8 @@ There are a couple reserved message sub-formats that have special meanings:
 * Global Error: `["e", [errorMessage, errorData]]`
 * Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that sent that event Emission must not emit any more messages on that stream.
 * Event Stream - Enable order data: `[id, "order", yesNo]`
-* Connection Established: `["open", openData]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
-* Impending Connection Closure: `["close", closeData]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
+* Connection Established: `["open"]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
+* Impending Connection Closure: `["close"]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
 * ID discontinuity message: ["idDiscontinuity", prevId, nextId] - This indicates that some IDs can't be used, and describes which IDs those are and where the IDs will continue from. `prevId` is the last usable ID, and `nextId` is the next usable ID. One use-case for this is if the maximum ID value is reached. The primary purpose of this is to ensure the ability to order request-response messages if desired. 
 
 In the above:
@@ -431,6 +431,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### 11. Change Log
 
+* 1.0.3 - 2017-10-27 - Removed `openData` and `closeData` from connection "open" and "close" messages.
 * 1.0.2 - 2017-03-04 - Removed ordering requirement, and adding optional order number for event messages. 
 * 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
 * 1.0.0 - 2016-02-26 - Created
