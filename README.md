@@ -282,7 +282,7 @@ The following procedure can be used to identify what kind of message has been re
 
 ### 6. Ordering Guarantees
 
-Message is not guaranteed by RPEP for a given pair of Peers. Implementations may provide a way for users to order Request-Response messages and Event messages, but not Fire-Forget messages or even to selectively ensure order based on the content of a message.  
+Message order is not guaranteed by RPEP for a given pair of Peers. Implementations may provide a way for users to order Request-Response messages and Event messages, but not Fire-Forget messages, not even to selectively ensure order based on the content of a message.  
 
 There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
 
@@ -293,7 +293,7 @@ Implementations must provide some way for a peer to indicate that a connection h
 * Some transport-protocol-level message, or
 * An RPEP "open" or "close" Fire and Forget message as described above.
 
-Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie it is allowed to drop a connection without informing the other Peer. But to reiterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
+Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie a Peer is allowed to drop a connection without informing the other Peer. But to reiterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
 
 ### 8.  Security Model
 
