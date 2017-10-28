@@ -1,5 +1,5 @@
 Category: **Standards Track**
-Version: **1.2.0**
+Version: **1.0.3**
 
 # The Remote Procedure and Event Protocol
 
@@ -241,7 +241,7 @@ Request and response involves two messages before being considered complete. The
 * Initiation: `[commandName, id, data]`
 * Emission: `[id, eventName, data]`
 
-An Event Stream requires at least two messages, but most likely involves more than that. It begins with a single Initiation message, may have any number of Emission messages, and must end with at least one "end" Emission message. The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "rpepIdNotFound" error. If the sender of an "end" event might receive valid events after sending that "end" event, the user of the implementation is strongly advised to require both ends to send "end" events. 
+An Event Stream requires at least two messages, but most likely involves more than that. It begins with a single Initiation message, may have any number of Emission messages, and must end with at least one "end" Emission message. The `id` in each Emission must match the `id` in the original Initiation message. Either Peer may send Emissions messages and both Peers must send the final "end" Emission message. After sending the "end" message, that sending Peer must NOT send any more messages. After sending the "end" message *and* receiving an "end" message, subsequent events that come in on that event stream MUST return a global-level "rpepIdNotFound" error.
 
              ,---------.         ,---------.
              |Initiator|         |Confirmer|
@@ -431,7 +431,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### 11. Change Log
 
-* 1.0.3 - 2017-10-27 - Removed `openData` and `closeData` from connection "open" and "close" messages.
+* 1.0.3 - 2017-10-27
+  * Removed `openData` and `closeData` from connection "open" and "close" messages.
+  * Removed contradictory suggestion that users of an implementation have the choice not to emit event stream confirmation end events.
 * 1.0.2 - 2017-03-04 - Removed ordering requirement, and adding optional order number for event messages. 
 * 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
 * 1.0.0 - 2016-02-26 - Created
