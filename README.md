@@ -1,5 +1,5 @@
 Category: **Standards Track**
-Version: **1.0.3**
+Version: **1.1.1**
 
 # The Remote Procedure and Event Protocol
 
@@ -144,16 +144,39 @@ RPEP implementations are NOT required to tie the lifetime of the underlying tran
 
 Each RPEP message is a "list" with either an id, a commandName, or both, and then some payload data. The types of messages are:
 
-* Fire and Forget: `[commandName, data]`
-* Request or Event Stream Initiation: `[commandName, id, data]`
-* Success Response: `[id, data]`
-* Event Stream Emission: `[id, eventName, data]`
+* **Fire and Forget**: `[commandName, data]`
+* **Request or Event Stream Initiation**: `[commandName, id, data]`
+* **Success Response**: `[id, data]`
+* **Event Stream Emission**
+  * *No ordering data:* `[id, eventName, data]`
+  * *With ordering data:* `[id, orderNumber, eventName, data]`
+* **Error Response**: `[id, errorMessage, errorData]`
 
 where
 
 * `id` is an integer ID as defined in section 5.1
 * `commandName` is any "string" value
 * `data` is any valid value the serialization format can represent. This value may be omitted in any message type.
+
+There are also some reserved sub-formats that have special meanings.
+
+Special Fire and Forget messages:
+* **Global Error**: `["error", [errorMessage, errorData]]`
+* **ID discontinuity message**: `["idDiscontinuity", [prevId, nextId]]` - This indicates that some IDs can't be used, and describes what the last ID was and which will be the next ID. `prevId` is the last usable ID, and `nextId` is the next usable ID. One use-case for this is if the maximum ID value is reached. The primary purpose of this is to ensure the ability to order request-response messages if desired. 
+* **Impending Connection Closure**: `["close"]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
+
+Special Event Stream Emissions (note that these are described without order numbers, but order numbers will be there as an inserted second element if ordering is turned on):
+* **Error Stream Emission:** `[id, "error", [errorMessage, errorData]]`
+* **Event Stream Ended**: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that sent that event Emission must not emit any more messages on that stream.
+* **Event Stream Enable/Disable order data**: `[id, "order", yesNo]`
+* **Order Number discontinuity message**: `[id, "orderNumberDiscontinuity", [prevNumber, nextNumber]]` - This indicates that some order numbers can't be used, and describes what the last order number was and which will be the next order number. `prevNumber` is the last usable order number, and `nextNumber` is the next usable order number. One use-case for this is if the maximum ID value is reached. The primary purpose of this is to ensure the ability to order event messages if desired. 
+
+In the above:
+
+* `errorMessage` must be a "string" type.
+* `errorData`, `endData`, and `closeData` may be any valid value that the serialization format can represent or may be omitted.
+* `yesNo` should either be 1 or 0 (for on or off respectively)
+* `prevId` and `nextId` must be an integer type. 
 
 ##### 5.1.  Structure
 
@@ -168,32 +191,13 @@ RPEP Peers need to identify the following ephemeral entities:
 
 These are identified in RPEP using IDs that are integers between (inclusive) *0* and *2^53* (9007199254740992). Services must only create even number IDs when sending Requests and Event Stream Initiation messages, and Clients must only use odd number IDs (so that the namespaces don't collide). IDs MUST be incremented by 2 beginning with 0 (for a Service) or 1 (for a Client). Requests and Event streams use the same ID space, and so a unique ID should be used across requests and event streams.
 
-The reason to choose the specific upper bound is that 2^53 is the largest integer such that this integer and _all_ (positive) smaller integers can be represented exactly in IEEE-754 doubles. Some languages (e.g.  JavaScript) use doubles as their sole number type.  Most languages do have signed and unsigned 64-bit integer types that both can hold any value from the specified range.
+The reason to choose the specific upper bound is that 2^53 is the largest integer such that this integer and _all_ (positive) smaller integers can be represented exactly in IEEE-754 doubles. Some languages (e.g.  JavaScript) use doubles as their sole numeric type.  Most languages do have signed and unsigned 64-bit integer types that both can hold any value from the specified range.
 
-Some handling of the case where the ID reaches 2^53 should be done. For example, the ID could wrap back around to 0 (or 1) but skip over IDs that are still currently in use by some open request or event stream. When this happens, an ID discontinuity message must be sent. 
+Some handling of the case where the ID reaches 2^53 should be done. For example, the ID could wrap back around to 0 (or 1) but skip over IDs that are still currently in use by some open request or event stream. When this happens, an ID discontinuity message must be sent. Implementations MUST provide a way to change the maximum ID during the connection so application level messages can be used to decide on a new maximum ID to be used on either or both ends.
 
 ###### 5.1.2  Command Names
 
 Like IDs, the namespace of command names (the `commandName` argument) is shared among all three messaging modes. Registering the same command name for more than one mode is not allowed.
-
-##### 5.2. Special Messages
-
-There are a couple reserved message sub-formats that have special meanings:
-
-* Error Response/Event: `[id, "e", [errorMessage, errorData]]`
-* Global Error: `["e", [errorMessage, errorData]]`
-* Event Stream Ended: `[id, "end", endData]` - This indicates that an Event Stream is completed. No more responses will be received and no more events should be emitted. After an "end" event is received, the Peer that sent that event Emission must not emit any more messages on that stream.
-* Event Stream - Enable order data: `[id, "order", yesNo]`
-* Connection Established: `["open"]` - This indicates that the Service has established the connection requested by the Client. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure))
-* Impending Connection Closure: `["close"]` - This indicates that the Sender is going to close the connection. This command is optional for certain transports (see the section ["Connection Establishment and Closure"](#7-connection-establishment-and-closure) for more details).
-* ID discontinuity message: ["idDiscontinuity", prevId, nextId] - This indicates that some IDs can't be used, and describes which IDs those are and where the IDs will continue from. `prevId` is the last usable ID, and `nextId` is the next usable ID. One use-case for this is if the maximum ID value is reached. The primary purpose of this is to ensure the ability to order request-response messages if desired. 
-
-In the above:
-
-* `errorMessage` must be a "string" type.
-* `errorData`, `endData`, and `closeData` may be any valid value that the serialization format can represent or may be omitted.
-* `yesNo` should either be 1 or 0 (for on or off respectively)
-* `prevId` and `nextId` must be an integer type. 
 
 ###### 5.2.1 Special Errors
 
@@ -272,8 +276,9 @@ While there is no explicit named mode in any given message, the type of mode can
 The following procedure can be used to identify what kind of message has been received:
 
 - 1. If the first value is a "string" type, the message is either a Fire and Forget, a Request, or an Event Stream Initiation.
-  - 1.1. Check the commandName for the mode it was registered as.
-  - 1.2. If the commandName isn't registered, send a Fire and Forget error with the error message "noSuchCommand"
+  - 1.1. If the message length is 1 and the commandName is "close", it's a connection closure message
+  - 1.2. Otherwise, check the commandName for the mode it was registered as.
+  - 1.3. If the commandName isn't registered, send a Fire and Forget error with the error message "noSuchCommand"
 - 2. Otherwise, if the first value is an "integer" type, the message is either a Response or an event Emission message.
   - 2.1. Check the id for its mode and other information as to how to handle it. If the id can't be found, send an "rpepIdNotFound" error response.
   - 2.2.1. Then, if it is a Response and there are 3 top-level values in the message, it is an error Response. Otherwise it is a success Response.
@@ -282,18 +287,18 @@ The following procedure can be used to identify what kind of message has been re
 
 ### 6. Ordering Guarantees
 
-Message order is not guaranteed by RPEP for a given pair of Peers. Implementations may provide a way for users to order Request-Response messages and Event messages, but not Fire-Forget messages, not even to selectively ensure order based on the content of a message.  
+Message order is not guaranteed by RPEP for a given pair of Peers. Implementations may provide a way for users to order Request-Response messages and Event messages, but not Fire-Forget messages, not even to selectively ensure order based on the content of a message. 
 
 There are no guarantees on the order of Responses or Events in relation to when their Requests or related Events were sent, since the execution of different messages may run at different speeds. A first message might trigger an expensive, long-running computation, whereas a second, subsequent message might finish immediately.
 
-### 7. Connection Establishment and Closure
+### 7. Connection Closure
 
-Implementations must provide some way for a peer to indicate that a connection has been established and that the connection will be closed. One of two ways of doing this must be available:
+Implementations must provide some way for a peer to indicate that the connection will be closed. One of two ways of doing this must be available:
 
 * Some transport-protocol-level message, or
-* An RPEP "open" or "close" Fire and Forget message as described above.
+* An RPEP "close" Fire and Forget message as described above.
 
-Implementations are required to use one of these ways of informing the other Peer of connection establishment. Implementations are, on the other hand, NOT required to use one of those ways to inform the other Peer of connection closure, ie a Peer is allowed to drop a connection without informing the other Peer. But to reiterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
+Implementations are NOT, on the other hand, required to *use* one of those ways to inform the other Peer of connection closure, ie a Peer is allowed to drop a connection without informing the other Peer. But to reiterate, an implementation must implement a method of closure that *does* involve informing the other Peer must be implemented, even if the user of the implementation chooses not to use that method.
 
 ### 8.  Security Model
 
@@ -431,9 +436,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### 11. Change Log
 
+* 1.1.1 - 2017-11-07 - Added requirement that implemenations allow changing the maximum ID on the fly.
+* 1.1.0 - 2017-10-30
+  * Changed the idDiscontinuity format slightly, to match the format of a fire-and-forget message
+  * Added the "orderNumberDiscontinuity" stream event.
+  * Changed error message formats for all 3 types
 * 1.0.3 - 2017-10-27
   * Removed `openData` and `closeData` from connection "open" and "close" messages.
   * Removed contradictory suggestion that users of an implementation have the choice not to emit event stream confirmation end events.
+  * Removed the "open" message (the transport must provide a way to determine connection establishment)
 * 1.0.2 - 2017-03-04 - Removed ordering requirement, and adding optional order number for event messages. 
 * 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
 * 1.0.0 - 2016-02-26 - Created
