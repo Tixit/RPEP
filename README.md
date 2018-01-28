@@ -44,15 +44,16 @@ It is intended to connect application components in distributed applications. RP
     - [9.1 Fire and Forget Examples](#91-fire-and-forget-examples)
     - [9.2 Request and Response Examples](#92-request-and-response-examples)
     - [9.3 Event Stream Examples](#93-event-stream-examples)
-- [10. Copyright Notice - The MIT License (MIT)](#10-copyright-notice---the-mit-license-mit)
-- [11. Change Log](#11-change-log)
-- [12.  References](#12--references)
-    - [12.1.  Normative References](#121--normative-references)
-    - [12.2.  Informative References](#122--informative-references)
-- [13.  Contributors](#13--contributors)
-- [14.  Acknowledgements](#14--acknowledgements)
-- [15. Authors' Addresses](#15-authors-addresses)
-- [16. How to Contribute!](#16-how-to-contribute)
+- [10. Known Implementations](#10-known-implementations)
+- [11. Copyright Notice - The MIT License (MIT)](#11-copyright-notice---the-mit-license-mit)
+- [12. Change Log](#12-change-log)
+- [13.  References](#13--references)
+    - [13.1.  Normative References](#131--normative-references)
+    - [13.2.  Informative References](#132--informative-references)
+- [14.  Contributors](#14--contributors)
+- [15.  Acknowledgements](#15--acknowledgements)
+- [16. Authors' Addresses](#16-authors-addresses)
+- [17. How to Contribute!](#17-how-to-contribute)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -413,7 +414,11 @@ A similar example to the previous Distributed Computing Example except with orde
 22. Initiator Emission: `[8, "end"]`
 23. Confirmer Emission: `[8, 15, "end"]`
 
-### 10. Copyright Notice - The MIT License (MIT)
+### 10. Known Implementations
+
+* [Rpep.js](https://github.com/Tixit/rpep.js) - a javascript implementation.
+
+### 11. Copyright Notice - The MIT License (MIT)
 
 Copyright (c) 2016 Billy Tetrud
 
@@ -434,7 +439,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-### 11. Change Log
+### 12. Change Log
 
 * 1.1.1 - 2017-11-07 - Added requirement that implemenations allow changing the maximum ID on the fly.
 * 1.1.0 - 2017-10-30
@@ -449,30 +454,30 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 * 1.0.1 - 2016-02-28 - Removed second "end" message requirement for event streams
 * 1.0.0 - 2016-02-26 - Created
 
-### 12.  References
+### 13.  References
 
-##### 12.1.  Normative References
+##### 13.1.  Normative References
 
-##### 12.2.  Informative References
+##### 13.2.  Informative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
               RFC2119, March 1997,
               <http://www.rfc-editor.org/info/rfc2119>.
 
-### 13.  Contributors
+### 14.  Contributors
 
 * Billy Tetrud
 
-### 14.  Acknowledgements
+### 15.  Acknowledgements
 
 RPEP was developed partly in response to Web Application Messaging Protocol. Thanks to them for the inspiration and motivation.
 
-### 15. Authors' Addresses
+### 16. Authors' Addresses
 
    Billy Tetrud
    Email: billy.tetrud at gmail.com
 
-### 16. How to Contribute!
+### 17. How to Contribute!
 
 Feel free to ask questions or discuss protocol changes in github issues, or at https://gitter.im/Tixit/RPEP-Discussion . If you want to write an implementation, please let us know so we can add your implmentation here.
